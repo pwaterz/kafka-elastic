@@ -142,7 +142,7 @@ func (ke *KafkaElastic) consumeTopic(topic string) error {
 	consumerConfig.Config.Consumer.MaxProcessingTime = 15 * time.Second
 	consumerConfig.Config.Version = sarama.V0_10_0_0
 	consumerConfig.Config.ClientID = group
-	consumerConfig.Consumer.Offsets.Initial = sarama.OffsetNewest
+	consumerConfig.Consumer.Offsets.Initial = sarama.OffsetOldest
 	consumerConfig.Consumer.Return.Errors = true
 	consumerConfig.Group.Return.Notifications = true
 
