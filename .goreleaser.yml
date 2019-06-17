@@ -1,0 +1,37 @@
+project_name: kafka-elastic
+
+release:
+  github:
+    owner: highwire
+    name: csync-responder
+
+builds:
+  - binary: kafka-elastic
+    goos:
+      - linux
+    goarch:
+      - amd64
+    main: .
+    ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+
+# Create RPM and .DEB files
+nfpm:
+  vendor: pwaterz
+
+  # Your app's maintainer
+  maintainer: Patrick Waters <pwaterz@gmail.com>
+
+  # Your app's description.
+  description: kafka-elastic is a program that takes all kafka messags and indexes them in elastic search.
+  license: MIT
+
+  # Formats to be generated.
+  formats:
+    - rpm
+
+  # Files or directories to add to your package (beyond the binary).
+  # Keys are source paths to get the files from.
+  # Values are the destination locations of the files in the package.
+  files:
+    "kafka-elastic.yaml": "/etc/kafka-elastic/kafka-elastic.yaml"
+    "kafka-elastic.service": "/etc/systemd/system/kafka-elastic.service"

@@ -1,0 +1,31 @@
+[Unit]
+After=network-online.target
+
+[Service]
+ExecStart=/usr/local/bin/kafka-elastic --config=/etc/kafka-elastic/kafka-elastic.yml
+WorkingDirectory=/etc/kafka-elastic
+User=nobody
+Group=nobody
+LimitNOFILE=infinity
+NonBlocking=true
+
+# Security Settings
+# -----------------
+
+# Make the entire system read only
+ProtectSystem=true
+
+# Use a prvate /tmp directory
+PrivateTmp=true
+
+# Dont allow access to /dev
+PrivateDevices=true
+
+# Dont allow any priviledge escalation
+NoNewPrivileges=true
+
+# Allow access to network
+PrivateNetwork=false
+
+[Install]
+WantedBy=multi-user.target
