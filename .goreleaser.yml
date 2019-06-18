@@ -33,5 +33,5 @@ nfpm:
   # Keys are source paths to get the files from.
   # Values are the destination locations of the files in the package.
   files:
-    "kafka-elastic.yaml": "/etc/kafka-elastic/kafka-elastic.yaml"
+    "kafka-elastic.yaml": "/etc/kafka-elastic/kafka-elastic-example.yaml"
     "kafka-elastic.service": "/etc/systemd/system/kafka-elastic.service"

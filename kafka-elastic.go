@@ -32,7 +32,7 @@ type KafkaElasticDoc struct {
 
 // KafkaElastic is the main application struct
 type KafkaElastic struct {
-	broker             *sarama.Broker
+	kafkaClient        sarama.Client
 	kafkaBrokerList    []string
 	elasticClient      *elastic.Client
 	wg                 sync.WaitGroup
@@ -50,8 +50,10 @@ func NewKafkaElastic(brokers, elasticHosts []string) (*KafkaElastic, error) {
 	ke.indexQueue = make(chan *KafkaElasticDoc)
 	ke.indexQueueShutdown = make(chan bool)
 	ke.ctx, ke.cancel = context.WithCancel(context.Background())
-	ke.broker = sarama.NewBroker(strings.Join(brokers, ","))
-	err := ke.broker.Open(nil)
+	config := sarama.NewConfig()
+	config.ClientID = "kafka-elastic"
+	var err error
+	ke.kafkaClient, err = sarama.NewClient(brokers, config)
 
 	if err != nil {
 		return ke, err
@@ -69,24 +71,8 @@ func NewKafkaElastic(brokers, elasticHosts []string) (*KafkaElastic, error) {
 }
 
 // GetTopics gets a list of all kakfa topics except internal topics and '__consumer_offsets' is explicitly ignored.
-func (ke *KafkaElastic) GetTopics() ([]*sarama.TopicMetadata, error) {
-	request := sarama.MetadataRequest{}
-	response, err := ke.broker.GetMetadata(&request)
-	if err != nil {
-		return nil, err
-	}
-
-	var topics []*sarama.TopicMetadata
-	for _, topic := range response.Topics {
-		if topic.IsInternal {
-			continue
-		}
-		// Not sure why this isn't flagged as internal...
-		if topic.Name == "__consumer_offsets" {
-			continue
-		}
-		topics = append(topics, topic)
-	}
+func (ke *KafkaElastic) GetTopics() ([]string, error) {
+	topics, _ := ke.kafkaClient.Topics()
 
 	return topics, nil
 }
@@ -99,14 +85,14 @@ func (ke *KafkaElastic) RefreshTopicIndexes() error {
 	}
 
 	for _, topic := range topics {
-		exists, err := ke.elasticClient.IndexExists(topic.Name).Do(context.Background())
+		exists, err := ke.elasticClient.IndexExists(topic).Do(context.Background())
 		if err != nil {
 			logElastic.Error(err)
 			continue
 		}
 
 		if !exists {
-			_, err := ke.elasticClient.CreateIndex(topic.Name).Body(mapping).Do(context.Background())
+			_, err := ke.elasticClient.CreateIndex(topic).Body(mapping).Do(context.Background())
 			if err != nil {
 				logElastic.Error(err)
 				continue
@@ -124,7 +110,7 @@ func (ke *KafkaElastic) startConsumers() error {
 	}
 
 	for _, topic := range topics {
-		err = ke.consumeTopic(topic.Name)
+		err = ke.consumeTopic(topic)
 		// Should we continue?
 		if err != nil {
 			return err
@@ -296,7 +282,7 @@ func (ke *KafkaElastic) Start() error {
 
 func (ke *KafkaElastic) shutdown() error {
 	logMain.Info("Shutting down kafka broker")
-	if err := ke.broker.Close(); err != nil {
+	if err := ke.kafkaClient.Close(); err != nil {
 		return err
 	}
 

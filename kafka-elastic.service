@@ -2,7 +2,7 @@
 After=network-online.target
 
 [Service]
-ExecStart=/usr/local/bin/kafka-elastic --config=/etc/kafka-elastic/kafka-elastic.yml
+ExecStart=/usr/local/bin/kafka-elastic --config=/etc/kafka-elastic/kafka-elastic.yaml
 WorkingDirectory=/etc/kafka-elastic
 User=nobody
 Group=nobody
